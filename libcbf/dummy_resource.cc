@@ -32,7 +32,7 @@
 
 namespace CBF {
 	void DummyResource::add(const FloatVector &arg) {
-		m_Variables += arg;
+    m_ResourceValue += arg;
 		CBF_DEBUG("current values" << m_Variables.transpose());
 	}
 
@@ -44,7 +44,7 @@ namespace CBF {
 		) :
 			Resource(xml_instance, object_namespace)
 		{
-			m_Variables = 
+      m_ResourceValue =
 				*XMLFactory<FloatVector>::instance()->create(
 					xml_instance.Vector(), object_namespace
 				)
