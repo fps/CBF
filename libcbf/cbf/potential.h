@@ -44,32 +44,16 @@ namespace CBF {
 	absolute value of the potential function needs to be known.
 */
 struct Potential : public Object {
-	bool m_ClampGradientStepNorm;
-	Float m_MaxGradientStepNorm;
 
 	Potential(const CBFSchema::Potential &xml_instance, ObjectNamespacePtr object_namespace);
 
-	Potential(
-		bool clamp_gradient_step_norm = false,
-		Float max_gradient_step_norm = 0.1
-	) :
-		Object("Potential"),
-		m_ClampGradientStepNorm(clamp_gradient_step_norm),
-		m_MaxGradientStepNorm(max_gradient_step_norm)
+  Potential() : Object("Potential")
 	{
 
 	}
 
 	virtual ~Potential() {
 
-	}
-
-	virtual void set_max_gradient_step_norm(Float gradient_norm) {
-		m_MaxGradientStepNorm = gradient_norm;
-	}
-
-	virtual Float max_gradient_step_norm() {
-		return m_MaxGradientStepNorm;
 	}
 
 	/**
@@ -84,17 +68,35 @@ struct Potential : public Object {
 	*/
 	virtual Float distance(const FloatVector &v1, const FloatVector &v2) = 0;
 
-	/**
-		The gradient can be implemented analytically or 
-		numerically depending on taste and application
-	*/
-	virtual void gradient (
-		FloatVector &result, 
-		const std::vector<FloatVector > &references, 
-		const FloatVector &input
-	) = 0;
+  /**
+    The gradient can be implemented analytically or
+    numerically depending on taste and application
+  */
+  virtual void gradient (
+    FloatVector &result,
+    const std::vector<FloatVector > &references,
+    const FloatVector &input
+  ) = 0;
 
-	virtual unsigned int dim() const = 0;
+  /**
+    The integration function
+  */
+  virtual void integration (
+    FloatVector &nextpos,
+    const FloatVector &currentpos,
+    const FloatVector &currentgradient,
+    const Float timestep
+  ) = 0;
+
+  /**
+    Dimension
+  */
+  virtual unsigned int dim() const = 0;
+
+  /**
+    Dimension in gradient level
+  */
+  virtual unsigned int dim_grad() const = 0;
 };
 
 typedef boost::shared_ptr<Potential> PotentialPtr;

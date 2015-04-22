@@ -25,10 +25,10 @@
 namespace CBF {
 
 	void SquarePotential::gradient (
-		FloatVector &result,
+    FloatVector &result,
 		const std::vector<FloatVector > &references,
-		const FloatVector &input
-	) {
+    const FloatVector &input) {
+
 		//! First we find the closest reference vector
 		Float min_dist = std::numeric_limits<Float>::max();
 		unsigned int min_index = 0;
@@ -36,27 +36,24 @@ namespace CBF {
 		//std::cout  << "[SquarePotential]: sizes: " << references[0].size() << " " << input.size() << std::endl;
 
 		for (unsigned int i = 0; i < references.size(); ++i) {
-			Float dist = distance(input, references[i]);
-			if (dist < min_dist) {
+      Float ldist = distance(input, references[i]);
+      if (ldist < min_dist) {
 				min_index = i;
-				min_dist = dist;
+        min_dist = ldist;
 			}
 		}
 
-		// CBF_DEBUG("min_index " << min_index)
-
-		//! The gradient of a square function is just negative of
-		//! input - reference..
-		result = m_Coefficient * (references[min_index] - input);
-		Float result_norm = norm(result);
-		// CBF_DEBUG("result_norm " << result_norm)
-
-		//! Normalize gradient step so it's not bigger than m_MaxGradientStep
-		if (result_norm >= m_MaxGradientStepNorm)
-			result = (m_MaxGradientStepNorm/result_norm) * result;
-		// std::cout << "[SquaredPotential]: result: " << result << std::endl;
+    result = (references[min_index] - input)*2.0;
 	}
 
+  void SquarePotential::integration (
+      FloatVector &nextpos,
+      const FloatVector &currentpos,
+      const FloatVector &currentvel,
+      const Float timestep)
+  {
+    nextpos = currentpos + 0.5*currentvel*timestep;
+  }
 
 
 #ifdef CBF_HAVE_XSD
@@ -65,8 +62,6 @@ namespace CBF {
 	{
 		CBF_DEBUG("[SquarePotential(const SquaredPotentialType &xml_instance)]: yay!");
 		CBF_DEBUG("Coefficient: " << xml_instance.Coefficient());
-		m_Coefficient = xml_instance.Coefficient();
-
 		m_Dim = xml_instance.Dimension();
 
 		// m_DistanceThreshold = xml_instance.DistanceThreshold();

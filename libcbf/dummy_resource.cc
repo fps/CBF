@@ -33,6 +33,7 @@
 namespace CBF {
 	void DummyResource::add(const FloatVector &arg) {
     m_ResourceValue += arg;
+    m_ResourceValueStep = arg;
 		CBF_DEBUG("current values" << m_Variables.transpose());
 	}
 

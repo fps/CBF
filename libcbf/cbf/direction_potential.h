@@ -18,30 +18,34 @@
     Copyright 2009, 2010 Florian Paul Schmidt
 */
 
-#ifndef CBF_AXIS_ANGLE_ORIENTATION_POTENTIALS_HH
-#define CBF_AXIS_ANGLE_ORIENTATION_POTENTIALS_HH
+#ifndef CBF_DIRECTION_POTENTIAL_H
+#define CBF_DIRECTION_POTENTIAL_H
 
 #include <cbf/config.h>
 #include <cbf/types.h>
 #include <cbf/utilities.h>
 #include <cbf/potential.h>
+#include <cbf/quaternion.h>
+#include <cbf/exceptions.h>
 #include <cbf/namespace.h>
 
 #include <boost/shared_ptr.hpp>
 
-namespace CBFSchema { class AxisAnglePotential; }
+#define CBF_DIRECTION_DIFFERENCE_THRESHOLD 0.000001
+
+namespace CBFSchema { class DirectionPotential; }
 
 namespace CBF {
-	
-	/**
-		@brief A potential function operating on the space of rotations...
-	
-		represented as Axis Angle, but with all information encoded into the
-		direction and length of the axis.
-	*/
-	struct AxisAnglePotential : public Potential {
-		AxisAnglePotential(const CBFSchema::AxisAnglePotential &xml_instance, ObjectNamespacePtr object_namespace);
-    AxisAnglePotential() :
+
+  /**
+    @brief A potential that only cares about the direction of an axis
+    and does n-dimensional SLERP to calculate an update step..
+  */
+  struct DirectionPotential : public Potential {
+
+    DirectionPotential(const CBFSchema::DirectionPotential &xml_instance, ObjectNamespacePtr object_namespace);
+
+    DirectionPotential() :
       Potential()
     {
 
@@ -59,22 +63,20 @@ namespace CBF {
         const FloatVector &currentvel,
         const Float timestep
     );
-	
-		virtual unsigned int dim() const { return 3u; }
+
+    virtual unsigned int dim() const { return 3u; }
 
     virtual unsigned int dim_grad() const { return 3u; }
 
-		virtual Float distance(const FloatVector &v1, const FloatVector &v2);
+    virtual Float distance(const FloatVector &v1, const FloatVector &v2);
 
-		virtual Float norm(const FloatVector &v) {
-			return normalize_angle(v.norm());
-    }
-	};
+    virtual Float norm(const FloatVector &v);
+  };
 
-	typedef boost::shared_ptr<AxisAnglePotential> AxisAnglePotentialPtr;
+  typedef boost::shared_ptr<DirectionPotential> DirectionPotentialPtr;
 
 } // namespace
 
-#endif
+#endif //CBF_DIRECTION_POTENTIAL_H
 
 

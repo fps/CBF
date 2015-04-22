@@ -41,11 +41,12 @@ namespace CBF {
 		}
 
 
-		void AxisAnglePotential::gradient (
-			FloatVector &result, 
-			const std::vector<FloatVector > &references, 
-			const FloatVector &input
-		) {
+    void AxisAnglePotential::gradient (
+      FloatVector &result,
+      const std::vector<FloatVector > &references,
+      const FloatVector &input)
+    {
+
 			CBF_DEBUG("[AxisAnglePotential]: input: " << input);
 			CBF_DEBUG("[AxisAnglePotential]: ref: " << references[0]);
 			Quaternion in;
@@ -56,7 +57,7 @@ namespace CBF {
 			ref.from_axis_angle3(references[0]);
 			CBF_DEBUG("q_ref: " << ref);
 
-			Quaternion step = qslerp(in, ref, m_Coefficient);
+      Quaternion step = qslerp(in, ref, 1.0);
 			CBF_DEBUG("step: " << step);
 
 			Quaternion res = step  * in.conjugate();
@@ -66,13 +67,20 @@ namespace CBF {
 			res.to_axis_angle3(result);
 			CBF_DEBUG("result: " << result);
 
-			if(norm(result) > m_MaxGradientStepNorm)
-				result *= m_MaxGradientStepNorm/norm(result);
+//			if(norm(result) > m_MaxGradientStepNorm)
+//				result *= m_MaxGradientStepNorm/norm(result);
 
 			CBF_DEBUG("Result: " << result);
 		}
 
-
+    void AxisAnglePotential::integration (
+        FloatVector &nextpos,
+        const FloatVector &currentpos,
+        const FloatVector &currentvel,
+        const Float timestep)
+    {
+      nextpos = currentpos+ 0.5*currentvel*timestep;
+    }
 
 
 
@@ -81,7 +89,6 @@ namespace CBF {
 			Potential(xml_instance, object_namespace) {
 			CBF_DEBUG("[AxisAnglePotential(const AxisAnglePotentialType &xml_instance)]: yay!");
 			CBF_DEBUG("Coefficient: " << xml_instance.Coefficient());
-			m_Coefficient = xml_instance.Coefficient();
 		}
 
 		static XMLDerivedFactory<AxisAnglePotential, CBFSchema::AxisAnglePotential> x;
