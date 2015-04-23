@@ -85,17 +85,17 @@ namespace CBF {
 	KDLChainPositionSensorTransform::KDLChainPositionSensorTransform(boost::shared_ptr<KDL::Chain> chain) :
 		BaseKDLChainSensorTransform(chain)
 	{
+    m_SensorDim = 3;
 		m_TaskDim = 3;
 		m_ResourceDim = chain->getNrOfJoints();
 
-		m_Result = FloatVector(3);
+    resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
 	}
 	
 	void KDLChainPositionSensorTransform::update(const FloatVector &resource_value) {
 		BaseKDLChainSensorTransform::update(resource_value);
 
 		//! Update the jacobian so we can hand it out...
-		m_TaskJacobian = FloatMatrix(3, resource_dim());
 		for (unsigned int i = 0; i < 3; ++i) {
 			for (unsigned int j = 0; j < resource_dim(); ++j) {
 				m_TaskJacobian(i,j) = (*m_Jacobian)(i,j);
@@ -112,9 +112,11 @@ namespace CBF {
 	KDLChainAxisAngleSensorTransform::KDLChainAxisAngleSensorTransform(boost::shared_ptr<KDL::Chain> chain) :
 		BaseKDLChainSensorTransform(chain)
 	{
-		m_TaskDim = 3;
-		m_ResourceDim = chain->getNrOfJoints();
-		m_Result = FloatVector(3);
+    m_SensorDim = 3;
+    m_TaskDim = 3;
+    m_ResourceDim = chain->getNrOfJoints();
+
+    resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
 	}
 	
 	void KDLChainAxisAngleSensorTransform::update(const FloatVector &resource_value) {
@@ -122,11 +124,6 @@ namespace CBF {
 	
 		CBF_DEBUG("Updating Jacobian");
 		//! Update the jacobian so we can hand it out...
-		m_TaskJacobian = FloatMatrix::Zero(3, resource_dim());
-	
-		//CBF_DEBUG(m_ConcreteJacobian)
-		//CBF_DEBUG(get_resource_dim())
-	
 		for (unsigned int i = 0; i < 3; ++i) {
 			for (unsigned int j = 0; j < resource_dim(); ++j) {
 				m_TaskJacobian(i,j) = (*m_Jacobian)(i+3, j);
@@ -151,6 +148,28 @@ namespace CBF {
 	}
 	
 
+
+  KDLChainQuaternionSensorTransform::KDLChainQuaternionSensorTransform(boost::shared_ptr<KDL::Chain> chain) :
+    BaseKDLChainSensorTransform(chain)
+  {
+    m_SensorDim = 4;
+    m_TaskDim = 3;
+    m_ResourceDim = chain->getNrOfJoints();
+
+    resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
+  }
+
+  void KDLChainQuaternionSensorTransform::update(const FloatVector &resource_value) {
+    BaseKDLChainSensorTransform::update(resource_value);
+
+    for (unsigned int i = 0; i < 3; ++i) {
+      for (unsigned int j = 0; j < resource_dim(); ++j) {
+        m_TaskJacobian(i,j) = (*m_Jacobian)(i+3, j);
+      }
+    }
+
+    (m_Frame->M).GetQuaternion(m_Result[1], m_Result[2], m_Result[3], m_Result[0]);
+  }
 
 
 
@@ -214,10 +233,11 @@ namespace CBF {
 	) : 
 		BaseKDLTreeSensorTransform(tree, segment_names)
 	{
-		m_TaskDim = 3;
-		m_ResourceDim = tree->getNrOfJoints();
-		m_Result = FloatVector(3 * segment_names.size());
-		m_TaskJacobian = FloatMatrix((int) 3 * segment_names.size(), (int) tree->getNrOfJoints());
+    m_SensorDim = 3 * segment_names.size();
+    m_TaskDim = 3 * segment_names.size();
+    m_ResourceDim = tree->getNrOfJoints();
+
+    resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
 
 		CBF_DEBUG("# of segments: " << segment_names.size());
 		for (unsigned int i = 0; i < segment_names.size(); ++i) {
@@ -254,11 +274,11 @@ namespace CBF {
 	) : 
 		BaseKDLTreeSensorTransform(tree, segment_names)
 	{
-		m_TaskDim = 3*segment_names.size();
+    m_SensorDim   = 3*segment_names.size();
+    m_TaskDim     = 3*segment_names.size();
 		m_ResourceDim = tree->getNrOfJoints();
 
-		m_Result = FloatVector(3 * segment_names.size());
-		m_TaskJacobian = FloatMatrix((int) 3 * segment_names.size(),(int)  tree->getNrOfJoints());
+    resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
 	}
 
 
@@ -351,13 +371,11 @@ namespace CBF {
 
 			init_solvers();
 
-			m_Result = FloatVector(3 *  m_SegmentNames.size());
+      m_SensorDim   = 3 * m_SegmentNames.size();
+      m_TaskDim     = 3 * m_SegmentNames.size();
+      m_ResourceDim = m_Tree->getNrOfJoints();
 
-			m_TaskJacobian = FloatMatrix(
-					(int) 3 * m_SegmentNames.size(),
-					(int)  m_Tree->getNrOfJoints()
-					);
-
+      resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
 		}
 		
 		KDLTreeAxisAngleSensorTransform::KDLTreeAxisAngleSensorTransform(
@@ -376,12 +394,11 @@ namespace CBF {
 
 			init_solvers();
 
-			m_Result = FloatVector(3 *  m_SegmentNames.size());
+      m_SensorDim   = 3 * m_SegmentNames.size();
+      m_TaskDim     = 3 * m_SegmentNames.size();
+      m_ResourceDim = m_Tree->getNrOfJoints();
 
-			m_TaskJacobian = FloatMatrix(
-					(int) 3 * m_SegmentNames.size(),
-					(int)  m_Tree->getNrOfJoints()
-					);
+      resize_variables(m_SensorDim, m_TaskDim, m_ResourceDim);
 
 		}
 

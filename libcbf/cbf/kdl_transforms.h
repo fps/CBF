@@ -32,6 +32,7 @@
 #include <cbf/sensor_transform.h>
 #include <cbf/namespace.h>
 #include <cbf/effector_transform.h>
+#include <cbf/quaternion.h>
 
 //! Forward declarations for stuff from KDL namespace that's only
 //! used by way of references
@@ -54,6 +55,7 @@ namespace KDL {
 namespace CBFSchema { 
 	class KDLChainPositionSensorTransform;
 	class KDLChainAxisAngleSensorTransform;
+  class KDLChainQuaternionSensorTransform;
 	class KDLTreePositionSensorTransform;
 	class KDLTreeAxisAngleSensorTransform;
 
@@ -87,6 +89,7 @@ namespace CBF {
 			//! Intermediate result
 			boost::shared_ptr<KDL::Jacobian> m_Jacobian;
 
+      unsigned int m_SensorDim;
 			unsigned int m_TaskDim;
 			unsigned int m_ResourceDim;
 	
@@ -143,10 +146,6 @@ namespace CBF {
 			boost::shared_ptr<KDL::Chain> chain
 		);
 
-		virtual unsigned int task_dim() const { 
-			return 3u; 
-		}
-
 		virtual void update(const FloatVector &resource_value);
 	};
 	
@@ -175,8 +174,6 @@ namespace CBF {
 		KDLChainAxisAngleSensorTransform(
 			boost::shared_ptr<KDL::Chain> chain
 		);
-		
-		virtual unsigned int task_dim() const { return 3u; }
 
 		virtual void update(const FloatVector &resource_value);
 	};
@@ -184,6 +181,23 @@ namespace CBF {
 	typedef boost::shared_ptr<KDLChainAxisAngleSensorTransform> KDLChainAxisAngleSensorTransformPtr;	
 
 
+
+  /**
+    @brief This class implements the SensorTransform for an arbitrary KDL chain. The task space is
+    the orientation of the end effector of the chain specified in quaternion representation.
+  */
+  struct KDLChainQuaternionSensorTransform : public BaseKDLChainSensorTransform
+  {
+    KDLChainQuaternionSensorTransform (const CBFSchema::KDLChainQuaternionSensorTransform &xml_instance, ObjectNamespacePtr object_namespace);
+
+    KDLChainQuaternionSensorTransform(
+      boost::shared_ptr<KDL::Chain> chain
+    );
+
+    virtual void update(const FloatVector &resource_value);
+  };
+
+  typedef boost::shared_ptr<KDLChainQuaternionSensorTransform> KDLChainQuaternionSensorTransformPtr;
 
 
 
@@ -200,6 +214,7 @@ namespace CBF {
 	*/
 	struct BaseKDLTreeSensorTransform : public SensorTransform {
 		protected:
+      unsigned int m_SensorDim;
 			unsigned int m_TaskDim;
 			unsigned int m_ResourceDim;
 
@@ -272,8 +287,6 @@ namespace CBF {
 			std::vector<std::string> segment_names
 		);
 
-		virtual unsigned int task_dim() const { return 3u * m_SegmentNames.size(); }
-
 		virtual void update(const FloatVector &resource_value);
 	};
 	
@@ -297,10 +310,6 @@ namespace CBF {
 			boost::shared_ptr<KDL::Tree> tree, 
 			std::vector<std::string> segment_names
 		);
-
-		virtual unsigned int task_dim() const { 
-			return 3u * m_SegmentNames.size(); 
-		}
 
 		virtual void update(const FloatVector &resource_value);
 	};

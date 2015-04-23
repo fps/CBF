@@ -89,14 +89,14 @@ struct Potential : public Object {
   ) = 0;
 
   /**
-    Dimension
+    Dimension in sensor level (position dimension)
   */
-  virtual unsigned int dim() const = 0;
+  virtual unsigned int sensor_dim() const = 0;
 
   /**
-    Dimension in gradient level
+    Dimension in task level (gradient dimension)
   */
-  virtual unsigned int dim_grad() const = 0;
+  virtual unsigned int task_dim() const = 0;
 };
 
 typedef boost::shared_ptr<Potential> PotentialPtr;

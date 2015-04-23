@@ -87,6 +87,8 @@ namespace CBF {
 			(*it)->m_Master = this;
 		}
 
+    m_GradientStep = FloatVector(m_Potential->task_dim());
+
 	}
 
   void PrimitiveController::reset(void)
@@ -144,11 +146,11 @@ namespace CBF {
 	
 
 	void SubordinateController::check_dimensions() {
-		if (m_Reference->dim() != m_Potential->dim())
-			CBF_THROW_RUNTIME_ERROR(m_Name << ": Reference and Potential dimensions mismatch: " << m_Reference->dim() << " is not equal to " << m_Potential->dim());
+    if (m_Reference->dim() != m_Potential->sensor_dim())
+      CBF_THROW_RUNTIME_ERROR(m_Name << ": Reference and Potential dimensions mismatch: " << m_Reference->dim() << " is not equal to " << m_Potential->sensor_dim());
 
-    if (m_SensorTransform->task_dim() != m_Potential->dim())
-			CBF_THROW_RUNTIME_ERROR(m_Name << ": Sensor Transform and Potential dimension mismatch: " << m_SensorTransform->task_dim() << " is not equal to " << m_Potential->dim());
+    if (m_SensorTransform->task_dim() != m_Potential->task_dim())
+      CBF_THROW_RUNTIME_ERROR(m_Name << ": Sensor Transform and Potential dimension mismatch: " << m_SensorTransform->task_dim() << " is not equal to " << m_Potential->task_dim());
 
 		if (m_SensorTransform->resource_dim() != m_EffectorTransform->resource_dim())
 			CBF_THROW_RUNTIME_ERROR(m_Name << ": Sensor Transform and Effector transform resource dimension mismatch: " << m_SensorTransform->resource_dim() << " is not equal to " << m_EffectorTransform->resource_dim());

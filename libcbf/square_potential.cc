@@ -62,8 +62,8 @@ namespace CBF {
 	{
 		CBF_DEBUG("[SquarePotential(const SquaredPotentialType &xml_instance)]: yay!");
 		CBF_DEBUG("Coefficient: " << xml_instance.Coefficient());
-		m_Dim = xml_instance.Dimension();
 
+    // m_SensorDim = xml_instance.Dimension();
 		// m_DistanceThreshold = xml_instance.DistanceThreshold();
 	}
 
