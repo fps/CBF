@@ -53,10 +53,9 @@ namespace CBF {
 		}
 	}
 
-  void CompositePotential::integration (
-      FloatVector &nextpos,
+  void CompositePotential::integration (FloatVector &nextpos,
       const FloatVector &currentpos,
-      const FloatVector &currentvel,
+      const FloatVector &taskvel,
       const Float timestep)
   {
     unsigned int pos_index = 0;
@@ -66,7 +65,7 @@ namespace CBF {
 
       m_Potentials[i]->integration(m_pos_buffers[i],
                                    currentpos.segment(pos_index , m_Potentials[i]->sensor_dim()),
-                                   currentvel.segment(grad_index, m_Potentials[i]->task_dim()),
+                                   taskvel.segment(grad_index, m_Potentials[i]->task_dim()),
                                    timestep);
 
       nextpos.segment(pos_index , m_Potentials[i]->sensor_dim()) = m_pos_buffers[i];

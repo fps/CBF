@@ -84,7 +84,7 @@ struct Potential : public Object {
   virtual void integration (
     FloatVector &nextpos,
     const FloatVector &currentpos,
-    const FloatVector &currentgradient,
+    const FloatVector &taskvel,
     const Float timestep
   ) = 0;
 

@@ -12,7 +12,6 @@ if(CBF_HAVE_KDL)
   include_directories(AFTER ${KDL_INCLUDE_DIRS})
 endif()
 
-
 set(exe cbf_simple_test)
 message(STATUS "  adding executable ${exe}")
 add_executable(${exe} ${exe}.cc)
