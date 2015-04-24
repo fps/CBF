@@ -43,7 +43,7 @@ namespace CBF {
 			}
 		}
 
-    result = (references[min_index] - input)*2.0;
+    result = (references[min_index] - input);
 	}
 
   void SquarePotential::integration (
@@ -52,7 +52,7 @@ namespace CBF {
       const FloatVector &taskvel,
       const Float timestep)
   {
-    nextpos = currentpos + 0.5*taskvel*timestep;
+    nextpos = currentpos + taskvel*timestep;
   }
 
 
