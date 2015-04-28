@@ -46,15 +46,30 @@ namespace CBF {
       const std::vector<FloatVector > &references,
       const FloatVector &input)
     {
+      assert(references.size() > 0);
+
+      //! Find the closest reference
+      Float min_distance = distance(references[0], input);
+      unsigned int min_index = 0;
+
+      for (unsigned int i = 1; i < references.size(); ++i) {
+        Float cur_distance = distance(references[i], input);
+        if (cur_distance < min_distance) {
+          min_index = i;
+          min_distance = cur_distance;
+        }
+      }
+
+      m_CurrentReference = references[min_distance];
 
 			CBF_DEBUG("[AxisAnglePotential]: input: " << input);
-			CBF_DEBUG("[AxisAnglePotential]: ref: " << references[0]);
+      CBF_DEBUG("[AxisAnglePotential]: ref: " << m_CurrentReference);
 			Quaternion in;
 			in.from_axis_angle3(input);
 			CBF_DEBUG("q_in: " << in);
 
 			Quaternion ref;
-			ref.from_axis_angle3(references[0]);
+      ref.from_axis_angle3(m_CurrentReference);
 			CBF_DEBUG("q_ref: " << ref);
 
       Quaternion step = qslerp(in, ref, 1.0);
@@ -73,7 +88,8 @@ namespace CBF {
 			CBF_DEBUG("Result: " << result);
 		}
 
-    void AxisAnglePotential::integration (FloatVector &nextpos,
+    void AxisAnglePotential::integration (
+        FloatVector &nextpos,
         const FloatVector &currentpos,
         const FloatVector &taskvel,
         const Float timestep)
@@ -81,13 +97,11 @@ namespace CBF {
       nextpos = currentpos+ taskvel*timestep;
     }
 
-
-
 	#ifdef CBF_HAVE_XSD
 		AxisAnglePotential::AxisAnglePotential(const CBFSchema::AxisAnglePotential &xml_instance, ObjectNamespacePtr object_namespace) :
 			Potential(xml_instance, object_namespace) {
 			CBF_DEBUG("[AxisAnglePotential(const AxisAnglePotentialType &xml_instance)]: yay!");
-			CBF_DEBUG("Coefficient: " << xml_instance.Coefficient());
+
 		}
 
 		static XMLDerivedFactory<AxisAnglePotential, CBFSchema::AxisAnglePotential> x;

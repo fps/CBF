@@ -43,7 +43,9 @@ namespace CBF {
 			}
 		}
 
-    result = (references[min_index] - input);
+    m_CurrentReference = references[min_index];
+
+    result = (m_CurrentReference - input);
 	}
 
   void SquarePotential::integration (

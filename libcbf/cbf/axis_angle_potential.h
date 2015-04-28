@@ -59,7 +59,7 @@ namespace CBF {
         const FloatVector &taskvel,
         const Float timestep
     );
-	
+
     virtual unsigned int sensor_dim() const { return 3u; }
 
     virtual unsigned int task_dim() const { return 3u; }

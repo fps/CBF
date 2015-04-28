@@ -20,7 +20,7 @@ namespace CBF {
 	bool ResourceStepNormThreshold::check_convergence(const SubordinateController &p) {
 		CBF_DEBUG("check convergence");
 
-		if ((p.m_ResourceStep).norm() < m_Threshold)
+    if ((p.m_ResourceVelocity).norm() < m_Threshold)
 			return true;
 
 		return false;

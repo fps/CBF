@@ -31,7 +31,7 @@
 #include <cbf/controller.h>
 #include <cbf/convergence_criterion.h>
 #include <cbf/potential.h>
-#include <cbf/task_space_planner.h>
+#include <cbf/filter.h>
 #include <cbf/resource.h>
 #include <cbf/effector_transform.h>
 #include <cbf/reference.h>
@@ -64,11 +64,11 @@ namespace CBF {
 			set from the specified arguments
 		*/
 		SubordinateController(
-			Float coefficient,
+      Float timestep,
 			std::vector<ConvergenceCriterionPtr> convergence_criteria,
 			ReferencePtr reference,
 			PotentialPtr potential,
-      TaskSpacePlannerPtr planner,
+      FilterPtr task_filter,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -94,11 +94,11 @@ namespace CBF {
 	
 			/*** @brief Function for stuff common to all constructors */
 			void init(
-				Float coefficient,
+        Float timestep,
 				std::vector<ConvergenceCriterionPtr> convergence_criteria,
 				ReferencePtr reference,
 				PotentialPtr potential,
-        TaskSpacePlannerPtr planner,
+        FilterPtr task_filter,
 				SensorTransformPtr sensor_transform,
 				EffectorTransformPtr effector_transform,
 				std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -139,7 +139,7 @@ namespace CBF {
       /**
         Task space trajectory planner
       */
-      TaskSpacePlannerPtr m_TaskSpacePlanner;
+      FilterPtr m_TaskFilter;
 	
 			/**
 				The effector transform is responsible for mapping the 
@@ -153,9 +153,9 @@ namespace CBF {
 			CombinationStrategyPtr m_CombinationStrategy;
 
 			/**
-				The factor for the primary gradient step
+        The factor for the primary update time step in second
 			*/
-			Float m_Coefficient;
+      Float m_TimeStep;
 
 		public:
 			/**
@@ -177,25 +177,28 @@ namespace CBF {
 			PotentialPtr potential() 
 				{ return m_Potential; }
 	
-      TaskSpacePlannerPtr planner()
-        { return m_TaskSpacePlanner; }
+      FilterPtr task_filter()
+        { return m_TaskFilter; }
 
       EffectorTransformPtr effector_transform()
 				{ return m_EffectorTransform; }
 	
 			CombinationStrategyPtr combination_strategy() 
 				{ return m_CombinationStrategy; }
-	
-			Float coefficient();
-	
+		
 		
 			/**
 				This reimplementation of the base class' method assumes that we are not a subordinate
 				controller, because subordinate controllers are always called via the do_step() method
 			*/
-			virtual void update();
+      virtual void update(Float timestep);
 
-			virtual void action() { }
+      virtual void action(Float timestep) { }
+
+      void update() {update(m_TimeStep);}
+
+      void action() {action(m_TimeStep);}
+
 
 			/**
 				@brief Returns the result of the calculationss done on update().
@@ -204,7 +207,7 @@ namespace CBF {
 				etc. The last step of a control cycle is applying the result (the resource
 				space gradient step) of these	calculations to the resource.
 			*/
-			virtual FloatVector &result() { return m_Result; }
+      virtual FloatVector &result_resource_velocity() { return m_CombinedResourceVlocity; }
 
 			virtual ResourcePtr resource();
 
@@ -218,8 +221,6 @@ namespace CBF {
 			virtual void check_dimensions();
 
 		protected:
-			FloatVector m_Result;
-
 			/**	Member variable for efficiency reasons.. */
 			FloatMatrix m_TaskJacobian;
 	
@@ -233,16 +234,22 @@ namespace CBF {
 			FloatVector m_CurrentTaskPosition;
 	
 			/**	Member variable for efficiency reasons.. */
-			FloatVector m_GradientStep;
+      FloatVector m_TaskStateError;
+
+      /**	Member variable for efficiency reasons.. */
+      FloatVector m_TaskVelocity;
+
+			/**	Member variable for efficiency reasons.. */
+      FloatVector m_ResourceVelocity;
+	
+      /**	Member variable for efficiency reasons.. */
+      FloatVector m_CombinedResourceVlocity;
+
+      /**	Member variable for efficiency reasons.. */
+      FloatVector m_NullSpaceResourceVlocity;
 	
 			/**	Member variable for efficiency reasons.. */
-			FloatVector m_ResourceStep;
-	
-			/**	Member variable for efficiency reasons.. */
-			FloatVector m_CombinedResults;
-	
-			/**	Member variable for efficiency reasons.. */
-			std::vector<FloatVector> m_SubordinateGradientSteps;
+      std::vector<FloatVector> m_NullSpaceMotion;
 	
 			/**	Member variable for efficiency reasons.. */
 			std::vector<FloatVector> m_References;
@@ -274,11 +281,11 @@ namespace CBF {
 			set from the specified arguments
 		*/
 		PrimitiveController(
-			Float coefficient,
+      Float timestep,
 			std::vector<ConvergenceCriterionPtr> convergence_criteria,
 			ReferencePtr reference,
 			PotentialPtr potential,
-      TaskSpacePlannerPtr planner,
+      FilterPtr task_filter,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -292,7 +299,7 @@ namespace CBF {
     */
     void reset(void);
 
-    void reset(const FloatVector resource_value, const FloatVector resource_step);
+    void reset(const FloatVector resource_value, const FloatVector resource_velocity);
 	
 		protected:
 			/*** @brief Function for stuff common to all constructors */
@@ -316,9 +323,13 @@ namespace CBF {
 
 			virtual ResourcePtr resource() { return m_Resource; }
 
-			virtual void update();
+      virtual void update(Float timestep);
 
-			virtual void action();
+      virtual void action(Float timestep);
+
+      void update() {update(m_TimeStep);}
+
+      void action() {action(m_TimeStep);}
 	};
 
 } // namespace

@@ -49,6 +49,9 @@ namespace CBF {
       result.segment(current_index, m_grad_buffers[i].size())
           = m_grad_buffers[i];
 
+      m_CurrentReference.segment(current_index, m_Potentials[i]->sensor_dim())
+          = m_Potentials[i]->reference();
+
       current_index += m_Potentials[i]->sensor_dim();
 		}
 	}
