@@ -68,7 +68,7 @@ namespace CBF {
 			std::vector<ConvergenceCriterionPtr> convergence_criteria,
 			ReferencePtr reference,
 			PotentialPtr potential,
-      FilterPtr task_filter,
+      FilterPtr reference_filter,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -98,7 +98,7 @@ namespace CBF {
 				std::vector<ConvergenceCriterionPtr> convergence_criteria,
 				ReferencePtr reference,
 				PotentialPtr potential,
-        FilterPtr task_filter,
+        FilterPtr reference_filter,
 				SensorTransformPtr sensor_transform,
 				EffectorTransformPtr effector_transform,
 				std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -139,7 +139,7 @@ namespace CBF {
       /**
         Task space trajectory planner
       */
-      FilterPtr m_TaskFilter;
+      FilterPtr m_ReferenceFilter;
 	
 			/**
 				The effector transform is responsible for mapping the 
@@ -177,8 +177,8 @@ namespace CBF {
 			PotentialPtr potential() 
 				{ return m_Potential; }
 	
-      FilterPtr task_filter()
-        { return m_TaskFilter; }
+      FilterPtr reference_filter()
+        { return m_ReferenceFilter; }
 
       EffectorTransformPtr effector_transform()
 				{ return m_EffectorTransform; }
@@ -285,7 +285,7 @@ namespace CBF {
 			std::vector<ConvergenceCriterionPtr> convergence_criteria,
 			ReferencePtr reference,
 			PotentialPtr potential,
-      FilterPtr task_filter,
+      FilterPtr reference_filter,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,

@@ -40,11 +40,9 @@ namespace CBF {
 			return angle;
 		}
 
-
-    void AxisAnglePotential::gradient (
-      FloatVector &result,
-      const std::vector<FloatVector > &references,
-      const FloatVector &input)
+    FloatVector &AxisAnglePotential::select_reference(
+        const std::vector<FloatVector > &references,
+        const FloatVector &input)
     {
       assert(references.size() > 0);
 
@@ -62,14 +60,23 @@ namespace CBF {
 
       m_CurrentReference = references[min_distance];
 
+      return m_CurrentReference;
+    }
+
+    void AxisAnglePotential::gradient (
+        FloatVector &result,
+        const FloatVector &reference,
+        const FloatVector &input)
+    {
+
 			CBF_DEBUG("[AxisAnglePotential]: input: " << input);
-      CBF_DEBUG("[AxisAnglePotential]: ref: " << m_CurrentReference);
+      CBF_DEBUG("[AxisAnglePotential]: ref: " << reference);
 			Quaternion in;
 			in.from_axis_angle3(input);
 			CBF_DEBUG("q_in: " << in);
 
 			Quaternion ref;
-      ref.from_axis_angle3(m_CurrentReference);
+      ref.from_axis_angle3(reference);
 			CBF_DEBUG("q_ref: " << ref);
 
       Quaternion step = qslerp(in, ref, 1.0);
@@ -81,11 +88,6 @@ namespace CBF {
 			result.resize(3);
 			res.to_axis_angle3(result);
 			CBF_DEBUG("result: " << result);
-
-//			if(norm(result) > m_MaxGradientStepNorm)
-//				result *= m_MaxGradientStepNorm/norm(result);
-
-			CBF_DEBUG("Result: " << result);
 		}
 
     void AxisAnglePotential::integration (

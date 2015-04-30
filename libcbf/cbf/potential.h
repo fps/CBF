@@ -69,26 +69,21 @@ struct Potential : public Object {
 	virtual Float distance(const FloatVector &v1, const FloatVector &v2) = 0;
 
   /**
+    Select primiry reference from the std::vector<FloatVector > &references
+  */
+  virtual FloatVector &select_reference(
+      const std::vector<FloatVector > &references,
+      const FloatVector &input) = 0;
+
+  /**
     The gradient can be implemented analytically or
     numerically depending on taste and application
   */
   virtual void gradient (
     FloatVector &result,
-    const std::vector<FloatVector > &references,
+    const FloatVector &reference,
     const FloatVector &input
   ) = 0;
-
-  virtual void gradient (
-    FloatVector &result,
-    const FloatVector &reference,
-    const FloatVector &input) {
-
-    std::vector<FloatVector > references;
-    references.resize(1,FloatVector(input.size()));
-
-    references[0] = reference;
-    gradient(result, references, input);
-  }
 
 
   /**
@@ -104,8 +99,8 @@ struct Potential : public Object {
   virtual void integration (
     FloatVector &updatepos,
     const FloatVector &taskvel,
-    const Float timestep ) {
-
+    const Float timestep )
+  {
     FloatVector nextpos = FloatVector(updatepos.size());
     integration(nextpos, updatepos, taskvel, timestep);
     updatepos = nextpos;

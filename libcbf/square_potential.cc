@@ -24,28 +24,35 @@
 
 namespace CBF {
 
-	void SquarePotential::gradient (
-    FloatVector &result,
-		const std::vector<FloatVector > &references,
-    const FloatVector &input) {
+  FloatVector &SquarePotential::select_reference(
+      const std::vector<FloatVector > &references,
+      const FloatVector &input)
+  {
+    assert(references.size() > 0);
 
-		//! First we find the closest reference vector
-		Float min_dist = std::numeric_limits<Float>::max();
-		unsigned int min_index = 0;
+    //! Find the closest reference
+    Float min_distance = distance(references[0], input);
+    unsigned int min_index = 0;
 
-		//std::cout  << "[SquarePotential]: sizes: " << references[0].size() << " " << input.size() << std::endl;
+    for (unsigned int i = 1; i < references.size(); ++i) {
+      Float cur_distance = distance(references[i], input);
+      if (cur_distance < min_distance) {
+        min_index = i;
+        min_distance = cur_distance;
+      }
+    }
 
-		for (unsigned int i = 0; i < references.size(); ++i) {
-      Float ldist = distance(input, references[i]);
-      if (ldist < min_dist) {
-				min_index = i;
-        min_dist = ldist;
-			}
-		}
+    m_CurrentReference = references[min_distance];
 
-    m_CurrentReference = references[min_index];
+    return m_CurrentReference;
+  }
 
-    result = (m_CurrentReference - input);
+  void SquarePotential::gradient (
+      FloatVector &result,
+      const FloatVector &reference,
+      const FloatVector &input)
+  {
+    result = (reference - input);
 	}
 
   void SquarePotential::integration (
