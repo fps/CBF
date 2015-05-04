@@ -67,14 +67,14 @@ namespace CBF {
       Float timestep,
 			std::vector<ConvergenceCriterionPtr> convergence_criteria,
 			ReferencePtr reference,
-			PotentialPtr potential,
       FilterPtr reference_filter,
+      PotentialPtr potential,
+      FilterPtr task_filter,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,
 			CombinationStrategyPtr combination_strategy
 		);
-	
 	
 		protected:
 			SubordinateController* m_Master;
@@ -97,8 +97,9 @@ namespace CBF {
         Float timestep,
 				std::vector<ConvergenceCriterionPtr> convergence_criteria,
 				ReferencePtr reference,
-				PotentialPtr potential,
         FilterPtr reference_filter,
+        PotentialPtr potential,
+        FilterPtr task_filter,
 				SensorTransformPtr sensor_transform,
 				EffectorTransformPtr effector_transform,
 				std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -150,6 +151,8 @@ namespace CBF {
 			*/
 			EffectorTransformPtr m_EffectorTransform;
 	
+      FilterPtr m_TaskFilter;
+
 			CombinationStrategyPtr m_CombinationStrategy;
 
 			/**
@@ -167,7 +170,10 @@ namespace CBF {
 
 			ReferencePtr reference() 
 				{ return m_Reference; }
-	
+
+      FilterPtr reference_filter()
+        { return m_ReferenceFilter; }
+
 			std::vector<SubordinateControllerPtr> &subordinate_controllers() 
 				{ return m_SubordinateControllers; }
 	
@@ -177,15 +183,15 @@ namespace CBF {
 			PotentialPtr potential() 
 				{ return m_Potential; }
 	
-      FilterPtr reference_filter()
-        { return m_ReferenceFilter; }
-
       EffectorTransformPtr effector_transform()
 				{ return m_EffectorTransform; }
+
+      FilterPtr task_filter()
+        { return m_TaskFilter; }
 	
 			CombinationStrategyPtr combination_strategy() 
 				{ return m_CombinationStrategy; }
-		
+
 		
 			/**
 				This reimplementation of the base class' method assumes that we are not a subordinate
@@ -199,6 +205,7 @@ namespace CBF {
 
       void action() {action(m_TimeStep);}
 
+      virtual void reset(const FloatVector resource_value, const FloatVector resource_velocity);
 
 			/**
 				@brief Returns the result of the calculationss done on update().
@@ -211,9 +218,11 @@ namespace CBF {
 
 			virtual ResourcePtr resource();
 
+      virtual FilterPtr resource_filter();
+
 			/**
 
-				Check if controller is converged. Call this function only
+        Check if controller is converged. Call this function only
 				after calling step() at least once..
 			*/
 			virtual bool finished();
@@ -284,44 +293,47 @@ namespace CBF {
       Float timestep,
 			std::vector<ConvergenceCriterionPtr> convergence_criteria,
 			ReferencePtr reference,
-			PotentialPtr potential,
       FilterPtr reference_filter,
+      PotentialPtr potential,
+      FilterPtr task_filter,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,
 			CombinationStrategyPtr combination_strategy,
-			ResourcePtr resource
+      ResourcePtr resource,
+      FilterPtr resource_filter
 		);
 	
+    void primitive_init(ResourcePtr resource, FilterPtr resource_filter);
+
     /**
       The reset() function reset the controller so as to generate the velocity continous task-space trajectory
       Before call the function, the user must make sure that the resource value and resource velocity values are set properly
     */
-    void reset(void);
+    void reset();
 
     void reset(const FloatVector resource_value, const FloatVector resource_velocity);
 	
 		protected:
-			/*** @brief Function for stuff common to all constructors */
-			void init(ResourcePtr resource);
-
 			/**
 				A controller can have subordinate controllers whose control signal
 				get projected into the nullspace of the task jacobian
 			*/
-			std::vector<PrimitiveControllerPtr> m_SubordinateControllers;
+      std::vector<PrimitiveControllerPtr> m_SubordinateControllers;
 	
-
 			/**
 				The resource this controller acts upon
 			*/
 			ResourcePtr m_Resource;
+      FilterPtr m_ResourceFilter;
 
 			virtual void check_dimensions();
 
 		public:
 
-			virtual ResourcePtr resource() { return m_Resource; }
+      ResourcePtr resource() { return m_Resource; }
+
+      FilterPtr resource_filter() { return m_ResourceFilter; }
 
       virtual void update(Float timestep);
 

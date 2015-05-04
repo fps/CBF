@@ -35,11 +35,13 @@
 
 
 namespace CBF {
-  SubordinateController::SubordinateController(Float timestep,
+  SubordinateController::SubordinateController(
+    Float timestep,
     std::vector<ConvergenceCriterionPtr> convergence_criteria,
     ReferencePtr reference,
-    PotentialPtr potential,
     FilterPtr reference_filter,
+    PotentialPtr potential,
+    FilterPtr task_filter,
     SensorTransformPtr sensor_transform,
     EffectorTransformPtr effector_transform,
     std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -50,8 +52,9 @@ namespace CBF {
       timestep,
 			convergence_criteria,
 			reference,
-			potential,
       reference_filter,
+      potential,
+      task_filter,
 			sensor_transform,
 			effector_transform,
 			subordinate_controllers,
@@ -64,9 +67,10 @@ namespace CBF {
 	void SubordinateController::init(
     Float timestep,
 		std::vector<ConvergenceCriterionPtr> convergence_criteria,
-		ReferencePtr reference,
-		PotentialPtr potential,
+    ReferencePtr reference,
     FilterPtr reference_filter,
+    PotentialPtr potential,
+    FilterPtr task_filter,
     SensorTransformPtr sensor_transform,
 		EffectorTransformPtr effector_transform,
 		std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -80,6 +84,7 @@ namespace CBF {
     m_ReferenceFilter = reference_filter,
 		m_SensorTransform = sensor_transform;
 		m_EffectorTransform = effector_transform;
+    m_TaskFilter = task_filter;
 		m_SubordinateControllers = subordinate_controllers;
 		m_CombinationStrategy = combination_strategy;
 
@@ -93,69 +98,98 @@ namespace CBF {
     // reference filter uses the potential's gradient() and integration() functions
     m_ReferenceFilter->diff = boost::bind(&Potential::gradient, m_Potential, _1, _2, _3);
     m_ReferenceFilter->integration = boost::bind(&Potential::integration, m_Potential, _1, _2, _3, _4);
-  }
 
-  void PrimitiveController::reset(void)
-  {
-    m_SensorTransform->update(m_Resource->get());
-
-    m_ReferenceFilter->reset(m_SensorTransform->result(),
-                        m_SensorTransform->task_jacobian()*m_Resource->get_resource_vel());
-
-  }
-
-  void PrimitiveController::reset(const FloatVector resource_value, const FloatVector resource_velocity)
-  {
-    m_Resource->update(resource_value, resource_velocity);
-    reset();
-  }
-
-	void PrimitiveController::init(
-			ResourcePtr resource
-	) {
-		m_Resource = resource;
-
-    reset();
-
-		check_dimensions();
+    // task filter uses the potential's gradient() and integration() functions
+    m_TaskFilter->diff = boost::bind(&Potential::gradient, m_Potential, _1, _2, _3);
+    m_TaskFilter->integration = boost::bind(&Potential::integration, m_Potential, _1, _2, _3, _4);
 
     // resize variables
     m_CurrentTaskPosition = FloatVector(m_SensorTransform->sensor_dim());
     m_TaskStateError = FloatVector(m_SensorTransform->task_dim());
     m_TaskVelocity = FloatVector(m_SensorTransform->task_dim());
-    m_ResourceVelocity = FloatVector(m_Resource->dim());
+    m_ResourceVelocity = FloatVector(m_SensorTransform->resource_dim());
 
-    m_NullSpaceResourceVlocity = FloatVector(m_Resource->dim());
-	}
+    m_CombinedResourceVlocity = FloatVector(m_SensorTransform->resource_dim());
+    m_NullSpaceResourceVlocity = FloatVector(m_SensorTransform->resource_dim());
 
-  PrimitiveController::PrimitiveController(Float timestep,
+    m_NullSpaceMotion.resize(m_SubordinateControllers.size(), FloatVector::Zero(m_SensorTransform->resource_dim()));
+  }
+
+  void SubordinateController::reset(const FloatVector resource_value, const FloatVector resource_velocity)
+  {
+    m_SensorTransform->update(resource_value);
+
+    m_ReferenceFilter->reset(
+          m_SensorTransform->result(),
+          m_SensorTransform->task_jacobian()*resource_velocity);
+
+    m_TaskFilter->reset(
+          FloatVector::Zero(m_SensorTransform->task_dim()),
+          m_SensorTransform->task_jacobian()*resource_velocity);
+
+    for (std::vector<SubordinateControllerPtr>::iterator
+         it  = m_SubordinateControllers.begin(),
+         end = m_SubordinateControllers.end();
+         it != end; ++it) {
+
+      (*it)->reset(resource_value, resource_velocity);
+    }
+  }
+
+  void PrimitiveController::primitive_init(ResourcePtr resource, FilterPtr resource_filter)
+  {
+    m_Resource = resource;
+    m_ResourceFilter = resource_filter;
+
+    reset(m_Resource->get(), m_Resource->get_resource_vel());
+
+    check_dimensions();
+  }
+
+  void PrimitiveController::reset()
+  {
+    reset(m_Resource->get(), m_Resource->get_resource_vel());
+  }
+
+  void PrimitiveController::reset(const FloatVector resource_value, const FloatVector resource_velocity)
+  {
+    m_Resource->update(resource_value, resource_velocity);
+    m_ResourceFilter->reset(m_Resource->get(), m_Resource->get_resource_vel());
+
+    SubordinateController::reset(resource_value, resource_velocity);
+  }
+
+  PrimitiveController::PrimitiveController(
+    Float timestep,
     std::vector<ConvergenceCriterionPtr> convergence_criteria,
     ReferencePtr reference,
-    PotentialPtr potential,
     FilterPtr reference_filter,
+    PotentialPtr potential,
+    FilterPtr task_filter,
     SensorTransformPtr sensor_transform,
     EffectorTransformPtr effector_transform,
     std::vector<SubordinateControllerPtr> subordinate_controllers,
     CombinationStrategyPtr combination_strategy,
-    ResourcePtr resource
+    ResourcePtr resource,
+    FilterPtr resource_filter
   )	:
 		SubordinateController(
       timestep,
 			convergence_criteria,
 			reference,
-			potential,
       reference_filter,
+      potential,
+      task_filter,
 			sensor_transform,
 			effector_transform,
 			subordinate_controllers,
 			combination_strategy
 		)
 	{
-		init(resource);
+    primitive_init(resource, resource_filter);
 
 		CBF_DEBUG("init");
 	}
-	
 
 	void SubordinateController::check_dimensions() {
     if (m_Reference->dim() != m_Potential->sensor_dim())
@@ -175,40 +209,43 @@ namespace CBF {
 		return m_Master->resource(); 
 	}	
 
+  FilterPtr SubordinateController::resource_filter() {
+    return m_Master->resource_filter();
+  }
+
   void PrimitiveController::update(Float timestep) {
 		m_Resource->update();
+    m_ResourceFilter->update(m_Resource->get(), m_Resource->get_resource_vel(), timestep);
+
     SubordinateController::update(timestep);
 	}	
 	
   void SubordinateController::update(Float timestep)
 	{
 		assert(m_Reference.get() != 0);
-		assert(m_SensorTransform.get() != 0);
+    assert(m_ReferenceFilter.get() != 0);
+    assert(m_SensorTransform.get() != 0);
 		assert(m_EffectorTransform.get() != 0);
 		assert(m_Potential.get() != 0);
-    assert(m_ReferenceFilter.get() != 0);
 		assert(m_CombinationStrategy.get() != 0);
 
-		assert(m_Reference->dim() == m_Potential->dim());
-
     if(timestep < m_TimeStep*0.1) {
-      CBF_THROW_RUNTIME_ERROR(m_Name << ": controller update timestep (" << timestep << ") is too small to compare to the average time step (" << m_TimeStep << ")!!");
+      CBF_THROW_RUNTIME_ERROR(m_Name << ": controller update timestep (" << timestep << ") is too small to compare to the default time step (" << m_TimeStep << ")!!");
     }
 
-		m_Reference->update();
-
-		m_References = m_Reference->get();
-
 		//! Fill vector with data from sensor transform
-		m_SensorTransform->update(resource()->get());
+    m_SensorTransform->update(resource_filter()->get_filtered_state());
 		CBF_DEBUG("jacobian: " << m_SensorTransform->task_jacobian());
 
-		m_EffectorTransform->update(resource()->get(), m_SensorTransform->task_jacobian());
+    m_EffectorTransform->update(resource_filter()->get_filtered_state(), m_SensorTransform->task_jacobian());
 		CBF_DEBUG("inv. jacobian: " << m_EffectorTransform->inverse_task_jacobian());
 	
 		m_CurrentTaskPosition = m_SensorTransform->result();
 		CBF_DEBUG("currentTaskPosition: " << m_CurrentTaskPosition);
-	
+
+    m_Reference->update();
+    m_References = m_Reference->get();
+
 		if (m_References.size() != 0) {	
 
       // reference filtering
@@ -217,27 +254,27 @@ namespace CBF {
             FloatVector::Zero(m_Potential->task_dim()),
             timestep);
 
-      // task space control
-      m_Potential->gradient(m_TaskStateError,
-                            m_ReferenceFilter->get_filtered_state(),
-                            m_CurrentTaskPosition);
+      m_ReferenceFilter->diff(
+            m_TaskStateError,
+            m_ReferenceFilter->get_filtered_state(),
+            m_CurrentTaskPosition);
 
-      m_TaskVelocity = m_TaskStateError/timestep;
+      // task space fitler
+      m_TaskFilter->update(m_TaskStateError, m_TaskStateError/timestep, timestep);
+      m_TaskVelocity = m_TaskFilter->get_filtered_state_vel();
 
-      //! Map task velocity into resource velocity via exec:
-			CBF_DEBUG("calling m_EffectorTransform->exec(): Type is: " << CBF_UNMANGLE(*m_EffectorTransform.get()));
+      // compute resource velocity from task space velocity
       m_EffectorTransform->exec(m_TaskVelocity, m_ResourceVelocity);
+
 		} else {
       m_ResourceVelocity.setZero();
 		}
 	
-		CBF_DEBUG("resourceStep: " << m_ResourceStep);
-
+    // Null space motion control
+    m_NullSpaceResourceVlocity.setZero();
     if (m_SubordinateControllers.size()>0) {
       //! then we recursively call subordinate controllers.. and gather their
       //! effector transformed gradient steps.
-      m_NullSpaceMotion.resize(m_SubordinateControllers.size());
-
       for (unsigned int i = 0; i < m_SubordinateControllers.size(); ++i) {
         m_SubordinateControllers[i]->update(timestep);
         m_NullSpaceMotion[i] = m_SubordinateControllers[i]->result_resource_velocity();
@@ -259,11 +296,9 @@ namespace CBF {
 
       CBF_DEBUG("combined_results * beta: " << m_NullSpaceResourceVlocity);
     }
-    else {
-      m_NullSpaceResourceVlocity.setZero();
-    }
 	
     m_CombinedResourceVlocity = m_ResourceVelocity + m_NullSpaceResourceVlocity;
+
 	}
 	
   void PrimitiveController::action(Float timestep) {
@@ -274,7 +309,7 @@ namespace CBF {
 
     m_Resource->add(m_CombinedResourceVlocity, timestep);
 
-		m_Converged = check_convergence();
+    m_Converged = check_convergence();
 	}
 	
 	bool SubordinateController::check_convergence() {
@@ -299,7 +334,7 @@ namespace CBF {
 	void PrimitiveController::check_dimensions() {
 		SubordinateController::check_dimensions();
 
-		if (m_SensorTransform->resource_dim() != m_Resource->dim())
+    if (m_SensorTransform->resource_dim() != m_Resource->dim())
 			CBF_THROW_RUNTIME_ERROR(m_Name + ": Sensor Transform and Resource dimension mismatch: " << m_SensorTransform->resource_dim() << " is not equal to " << m_Resource->dim());
 
 		if (m_EffectorTransform->resource_dim() != m_Resource->dim())
@@ -358,7 +393,8 @@ namespace CBF {
 			//! Instantiate the Effector transform
 			CBF_DEBUG("Creating effector transform...");
 			EffectorTransformPtr effector_transform = XMLObjectFactory::instance()->create<EffectorTransform>(xml_instance.EffectorTransform(), object_namespace);
-		
+      FilterPtr task_filter; // TODO
+
 			CBF_DEBUG("Creating combination strategy...");
 			CombinationStrategyPtr combination_strategy  = 
 				XMLObjectFactory::instance()->create<CombinationStrategy>(xml_instance.CombinationStrategy(), object_namespace);
@@ -383,21 +419,24 @@ namespace CBF {
 			init(
         timestep,
 				convergence_criteria,
-				reference,
-				potential,
+        reference,
         reference_filter,
+        potential,
+        task_filter,
 				sensor_transform,
 				effector_transform,
 				subordinate_controllers,
 				combination_strategy
-			);
+      );
 		}
 
 		PrimitiveController::PrimitiveController(const CBFSchema::PrimitiveController &xml_instance, ObjectNamespacePtr object_namespace) :
 			SubordinateController(xml_instance, object_namespace) {
 
-			ResourcePtr res = XMLObjectFactory::instance()->create<Resource>(xml_instance.Resource(), object_namespace);
-			init(res);
+      ResourcePtr res = XMLObjectFactory::instance()->create<Resource>(xml_instance.Resource(), object_namespace);
+      FilterPtr res_filter; // TODO
+
+      primitive_init(res, res_filter);
 		}
 
 

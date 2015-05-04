@@ -45,7 +45,7 @@ struct SquarePotential : public Potential {
 
   unsigned int m_TaskDim;
 
-  SquarePotential(unsigned int sensordim = 1, unsigned int taskdim = 1) :
+  SquarePotential(unsigned int sensordim, unsigned int taskdim) :
     m_SensorDim(sensordim),
     m_TaskDim(taskdim)
 	{
