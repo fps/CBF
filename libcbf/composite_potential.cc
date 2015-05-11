@@ -77,7 +77,7 @@ namespace CBF {
       const FloatVector &reference,
       const FloatVector &input)
   {
-    result = FloatVector::Zero(input.size());
+    result.setZero();
 
 		unsigned int current_index = 0;
 		for (unsigned int i = 0; i < m_Potentials.size(); ++i) {
@@ -96,7 +96,7 @@ namespace CBF {
       result.segment(current_index, m_grad_buffers[i].size())
           = m_grad_buffers[i];
 
-      current_index += m_Potentials[i]->sensor_dim();
+      current_index += m_Potentials[i]->task_dim();
 		}
 	}
 

@@ -124,7 +124,7 @@ namespace CBF {
 			/**
 				This reads the current resource values and updates the KDL::Jacobian matrix..
 			*/
-			virtual void update(const FloatVector &resource_value);
+      virtual void update(const FloatVector &resource_value);
 
 			boost::shared_ptr<KDL::Chain> chain() { return m_Chain; }
 	};

@@ -32,6 +32,7 @@
 #include <cbf/convergence_criterion.h>
 #include <cbf/potential.h>
 #include <cbf/filter.h>
+#include <cbf/error_control.h>
 #include <cbf/resource.h>
 #include <cbf/effector_transform.h>
 #include <cbf/reference.h>
@@ -69,7 +70,7 @@ namespace CBF {
 			ReferencePtr reference,
       FilterPtr reference_filter,
       PotentialPtr potential,
-      FilterPtr task_filter,
+      ErrorControlPtr error_control,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -99,7 +100,7 @@ namespace CBF {
 				ReferencePtr reference,
         FilterPtr reference_filter,
         PotentialPtr potential,
-        FilterPtr task_filter,
+        ErrorControlPtr error_control,
 				SensorTransformPtr sensor_transform,
 				EffectorTransformPtr effector_transform,
 				std::vector<SubordinateControllerPtr> subordinate_controllers,
@@ -151,7 +152,7 @@ namespace CBF {
 			*/
 			EffectorTransformPtr m_EffectorTransform;
 	
-      FilterPtr m_TaskFilter;
+      ErrorControlPtr m_ErrorControl;
 
 			CombinationStrategyPtr m_CombinationStrategy;
 
@@ -186,8 +187,8 @@ namespace CBF {
       EffectorTransformPtr effector_transform()
 				{ return m_EffectorTransform; }
 
-      FilterPtr task_filter()
-        { return m_TaskFilter; }
+      ErrorControlPtr error_control()
+        { return m_ErrorControl; }
 	
 			CombinationStrategyPtr combination_strategy() 
 				{ return m_CombinationStrategy; }
@@ -295,7 +296,7 @@ namespace CBF {
 			ReferencePtr reference,
       FilterPtr reference_filter,
       PotentialPtr potential,
-      FilterPtr task_filter,
+      ErrorControlPtr error_control,
 			SensorTransformPtr sensor_transform,
 			EffectorTransformPtr effector_transform,
 			std::vector<SubordinateControllerPtr> subordinate_controllers,

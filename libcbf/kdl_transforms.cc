@@ -75,7 +75,7 @@ namespace CBF {
 		m_JacSolver->JntToJac(jnt_array, *m_Jacobian);
 		m_FKSolver->JntToCart(jnt_array, *m_Frame);
 	}
-	
+
 	unsigned int BaseKDLChainSensorTransform::resource_dim() const {
 		return m_Chain->getNrOfJoints();
 	}

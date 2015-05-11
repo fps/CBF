@@ -213,7 +213,7 @@ namespace CBF {
 	
 	typedef boost::shared_ptr<PaddedEffectorTransform> PaddedEffectorTransformPtr;
 	
-	
+
 } // namespace
 
 #endif
