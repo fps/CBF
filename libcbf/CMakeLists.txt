@@ -50,6 +50,8 @@ set(CBF_SOURCES
   bypass_filter.cc
   error_control.cc
   error_controllers.cc
+  limiter.cc
+  generic_limiters.cc
   )
 
 set(CBF_HEADERS
@@ -125,6 +127,8 @@ set(CBF_HEADERS
   cbf/bypass_filter.h
   cbf/error_control.h
   cbf/error_controllers.h
+  cbf/limiter.h
+  cbf/generic_limiters.h
   )
 
 if(CBF_HAVE_PYTHON)

@@ -138,10 +138,11 @@ namespace CBF {
     }
   }
 
-  void PrimitiveController::primitive_init(ResourcePtr resource, FilterPtr resource_filter)
+  void PrimitiveController::primitive_init(ResourcePtr resource, FilterPtr resource_filter, LimiterPtr limiter)
   {
     m_Resource = resource;
     m_ResourceFilter = resource_filter;
+    m_ResourceLimiter = limiter;
 
     reset(m_Resource->get(), m_Resource->get_resource_vel());
 
@@ -161,8 +162,7 @@ namespace CBF {
     SubordinateController::reset(resource_value, resource_velocity);
   }
 
-  PrimitiveController::PrimitiveController(
-    Float timestep,
+  PrimitiveController::PrimitiveController(Float timestep,
     std::vector<ConvergenceCriterionPtr> convergence_criteria,
     ReferencePtr reference,
     FilterPtr reference_filter,
@@ -173,8 +173,8 @@ namespace CBF {
     std::vector<SubordinateControllerPtr> subordinate_controllers,
     CombinationStrategyPtr combination_strategy,
     ResourcePtr resource,
-    FilterPtr resource_filter
-  )	:
+    FilterPtr resource_filter,
+    LimiterPtr limiter)	:
 		SubordinateController(
       timestep,
 			convergence_criteria,
@@ -188,7 +188,7 @@ namespace CBF {
 			combination_strategy
 		)
 	{
-    primitive_init(resource, resource_filter);
+    primitive_init(resource, resource_filter, limiter);
 
 		CBF_DEBUG("init");
 	}
@@ -318,7 +318,16 @@ namespace CBF {
       CBF_THROW_RUNTIME_ERROR(m_Name << ": controller update timestep (" << timestep << ") is too small to compare to the average time step (" << m_TimeStep << ")!!");
     }
 
-    m_Resource->set(m_ResourceFilter->get_filtered_state()+m_CombinedResourceVlocity*timestep);
+    FloatVector lRes = FloatVector::Zero(m_CombinedResourceVlocity.size());
+    lRes = m_ResourceFilter->get_filtered_state()+m_CombinedResourceVlocity*timestep;
+
+    m_ResourceLimiter->limit(m_ResourceFilter->get_filtered_state(),
+                             m_ResourceFilter->get_filtered_state_vel(),
+                             lRes,
+                             m_CombinedResourceVlocity);
+
+    m_Resource->update(lRes,
+                       m_CombinedResourceVlocity);
 
     m_Converged = check_convergence();
 	}
@@ -446,8 +455,9 @@ namespace CBF {
 
       ResourcePtr res = XMLObjectFactory::instance()->create<Resource>(xml_instance.Resource(), object_namespace);
       FilterPtr res_filter; // TODO
+      LimiterPtr res_limiter; // TODO
 
-      primitive_init(res, res_filter);
+      primitive_init(res, res_filter, res_limiter);
 		}
 
 
