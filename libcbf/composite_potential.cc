@@ -79,24 +79,21 @@ namespace CBF {
   {
     result.setZero();
 
-		unsigned int current_index = 0;
-		for (unsigned int i = 0; i < m_Potentials.size(); ++i) {
-			CBF_DEBUG("[CompositePotential]: ----");
-      m_ref_buffers[i] = reference.segment(current_index, m_Potentials[i]->sensor_dim());
-      m_in_buffers[i] = input.segment(current_index, m_Potentials[i]->sensor_dim());
-			CBF_DEBUG("[CompositePotential]: in: " <<  m_in_buffers[i]);
+    unsigned int pos_index = 0;
+    unsigned int grad_index = 0;
 
-			std::vector<FloatVector > tmp_refs;
-			tmp_refs.push_back(m_ref_buffers[i]);
-			CBF_DEBUG("[CompositePotential]: tmp_refs: " <<  tmp_refs[0]);
-			CBF_DEBUG("[CompositePotential]: m_ref_buffers: " <<  m_ref_buffers[i]);
+    for (unsigned int i = 0; i < m_Potentials.size(); ++i) {
+      CBF_DEBUG("[CompositePotential]: ----");
+      m_ref_buffers[i] = reference.segment(pos_index, m_Potentials[i]->sensor_dim());
+      m_in_buffers[i] = input.segment(pos_index, m_Potentials[i]->sensor_dim());
+      CBF_DEBUG("[CompositePotential]: in: " <<  m_in_buffers[i]);
 
       m_Potentials[i]->gradient(m_grad_buffers[i], m_ref_buffers[i], m_in_buffers[i]);
       CBF_DEBUG("[CompositePotential]: out: " <<  m_grad_buffers[i]);
-      result.segment(current_index, m_grad_buffers[i].size())
-          = m_grad_buffers[i];
+      result.segment(grad_index, m_Potentials[i]->task_dim()) = m_grad_buffers[i];
 
-      current_index += m_Potentials[i]->task_dim();
+      pos_index  += m_Potentials[i]->sensor_dim();
+      grad_index += m_Potentials[i]->task_dim();
 		}
 	}
 

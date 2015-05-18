@@ -113,14 +113,16 @@ namespace CBF {
 
   void SubordinateController::reset(const FloatVector resource_value, const FloatVector resource_velocity)
   {
-    FloatVector lTaskError = FloatVector(m_SensorTransform->task_dim());
-    FloatVector lRef  = FloatVector(m_SensorTransform->sensor_dim());
-
     // reset sensor transform
     m_SensorTransform->update(resource_value, resource_velocity);
 
     // reset error controller
     m_ErrorControl->reset();
+
+    // reset reference
+    std::vector<FloatVector> lRef = std::vector<FloatVector>(1, m_SensorTransform->result());
+    lRef[0] = m_SensorTransform->result();
+    m_Reference->set_references(lRef);
 
     // reset reference filter
     m_ReferenceFilter->reset(m_SensorTransform->result(),
@@ -138,6 +140,27 @@ namespace CBF {
     }
   }
 
+  void SubordinateController::reset_sensor()
+  {
+    // reset sensor transform
+    m_SensorTransform->update(resource_filter()->get_filtered_state(),
+                              resource_filter()->get_filtered_state_vel());
+
+    // reset reference filter
+    m_ReferenceFilter->reset(m_SensorTransform->result(),
+                             m_SensorTransform->get_task_velocity());
+
+    // reset null motions
+    for (std::vector<SubordinateControllerPtr>::iterator
+         it  = m_SubordinateControllers.begin(),
+         end = m_SubordinateControllers.end();
+         it != end; ++it) {
+
+      (*it)->reset_sensor();
+    }
+  }
+
+
   void PrimitiveController::primitive_init(ResourcePtr resource, FilterPtr resource_filter, LimiterPtr limiter)
   {
     m_Resource = resource;
@@ -151,7 +174,7 @@ namespace CBF {
 
   void PrimitiveController::reset()
   {
-    reset(m_ResourceFilter->get_filtered_state(), m_ResourceFilter->get_filtered_state_vel());
+    SubordinateController::reset(m_ResourceFilter->get_filtered_state(), m_ResourceFilter->get_filtered_state_vel());
   }
 
   void PrimitiveController::reset(const FloatVector resource_value, const FloatVector resource_velocity)
