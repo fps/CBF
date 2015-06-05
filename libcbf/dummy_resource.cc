@@ -32,6 +32,35 @@
 
 namespace CBF {
 
+  DummyResource::DummyResource(const FloatVector &values) : Resource()
+  {
+    m_ResourceValue = FloatVector(values.size());
+    m_ResourceValueVelocity = FloatVector(values.size());
+
+    m_ResourceValue = values;
+  }
+
+  /**
+    The variance argument can be used to initialize the resource
+    with non zero values drawn from a distribution with range
+    -variance to variance.
+  */
+  DummyResource::DummyResource(unsigned int dim, Float variance) : Resource()
+  {
+    m_ResourceValue = FloatVector(dim);
+    m_ResourceValueVelocity = FloatVector(dim);
+
+    if (variance != 0.0) {
+      double lfx = 1./sqrt(2.0*M_PI*variance*variance);
+      double lx_u;
+
+      for (unsigned int i = 0; i < dim; ++i) {
+        lx_u = ((Float)rand()-(RAND_MAX/2.0))/(Float)RAND_MAX;
+        m_ResourceValue[i] = lfx * exp(-lx_u/(2.0*variance*variance));
+      }
+    }
+  }
+
   void DummyResource::update() {
 
   }

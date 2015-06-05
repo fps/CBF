@@ -322,38 +322,37 @@ namespace CBF {
     void reset();
 
     void reset(const FloatVector resource_value, const FloatVector resource_velocity);
-	
-		protected:
-			/**
-				A controller can have subordinate controllers whose control signal
-				get projected into the nullspace of the task jacobian
-			*/
-      std::vector<PrimitiveControllerPtr> m_SubordinateControllers;
-	
-			/**
-				The resource this controller acts upon
-			*/
-			ResourcePtr m_Resource;
-      FilterPtr m_ResourceFilter;
-      LimiterPtr m_ResourceLimiter;
 
-			virtual void check_dimensions();
+    ResourcePtr resource() { return m_Resource; }
 
-		public:
+    FilterPtr resource_filter() { return m_ResourceFilter; }
 
-      ResourcePtr resource() { return m_Resource; }
+    LimiterPtr resource_limiter() { return m_ResourceLimiter; }
 
-      FilterPtr resource_filter() { return m_ResourceFilter; }
+    virtual void update(Float timestep);
 
-      LimiterPtr resource_limiter() { return m_ResourceLimiter; }
+    virtual void action(Float timestep);
 
-      virtual void update(Float timestep);
+    void update() {update(m_TimeStep);}
 
-      virtual void action(Float timestep);
+    void action() {action(m_TimeStep);}
 
-      void update() {update(m_TimeStep);}
+  private:
+    /**
+      A controller can have subordinate controllers whose control signal
+      get projected into the nullspace of the task jacobian
+    */
+    std::vector<PrimitiveControllerPtr> m_SubordinateControllers;
 
-      void action() {action(m_TimeStep);}
+    /**
+      The resource this controller acts upon
+    */
+    ResourcePtr m_Resource;
+    FilterPtr m_ResourceFilter;
+    LimiterPtr m_ResourceLimiter;
+
+    virtual void check_dimensions();
+
 	};
 
 } // namespace
