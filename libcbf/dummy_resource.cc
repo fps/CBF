@@ -61,27 +61,27 @@ namespace CBF {
     }
   }
 
-  void DummyResource::update() {
+
+  void DummyResource::read()
+  {
 
   }
 
-  void DummyResource::add(const FloatVector &resource_velocity, const Float timestep) {
-    m_ResourceValueVelocity = resource_velocity;
-    m_ResourceValue += resource_velocity*timestep;
+  void DummyResource::write(const FloatVector &vel, const Float timestep)
+  {
+    integrate_Euler(m_ResourceValue, vel, timestep);
   }
 
-  void DummyResource::set(const FloatVector &pos) {
+  void DummyResource::set(const FloatVector &pos)
+  {
     m_ResourceValue = pos;
   }
 
-  const FloatVector &DummyResource::get_resource_vel() {
-    return m_ResourceValueVelocity;
+  void DummyResource::set(const FloatVector &pos, const FloatVector &vel)
+  {
+    m_ResourceValue = pos;
+    m_ResourceValueVelocity = vel;
   }
-
-  const FloatVector &DummyResource::get() {
-    return m_ResourceValue;
-  }
-
 
 	#ifdef CBF_HAVE_XSD
 		DummyResource::DummyResource(
